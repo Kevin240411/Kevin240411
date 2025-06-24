@@ -158,7 +158,6 @@
                 const date = new Date(videoInfo.publishedAt);
                 videoDate.textContent = date.toLocaleDateString();
                 
-                // En una API real, aquí podrías obtener más detalles como vistas, etc.
                 videoViews.textContent = "Visualizaciones no disponibles";
             }
         }
@@ -168,7 +167,6 @@
             loadingIndicator.style.display = show ? 'block' : 'none';
         }
         
-        // Ejemplo de cómo podrías implementar una API de streaming personalizada
         async function fetchFromCustomStreamingAPI() {
             /* 
             // Ejemplo de implementación para una API personalizada
