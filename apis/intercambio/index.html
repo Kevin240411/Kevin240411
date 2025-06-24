@@ -4,18 +4,416 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="estilo.css">
-    <title>Intercambio de Información vía API</title>
+    <title>Interfaz para API de Intercambio</title>
     
 </head>
 <body>
-    <h1>Intercambio de Información vía API</h1>
-</head>
-<body>
-    <h1>Tasas de Cambio (USD como base)</h1>
-    <p id="tasaEUR">Cargando tasa EUR...</p>
-    <p id="tasaGBP">Cargando tasa GBP...</p>
-    <p id="tasaJPY">Cargando tasa JPY...</p>
+    <header>
+        <div class="container">
+            <h1>Interfaz para API de Intercambio</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="api-controls">
+            <div class="config-panel">
+                <h2>Configuración</h2>
+                
+                <div class="form-group">
+                    <label for="apiEndpoint">Endpoint de la API</label>
+                    <input type="text" id="apiEndpoint" placeholder="https://api.example.com/data">
+                </div>
+                
+                <div class="form-group api-key-container">
+                    <label for="apiKey">API Key (opcional)</label>
+                    <input type="password" id="apiKey" placeholder="Ingresa tu API key">
+                    <button class="toggle-visibility" id="toggleVisibility">👁️</button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="authType">Tipo de Autenticación</label>
+                    <select id="authType">
+                        <option value="none">Ninguna</option>
+                        <option value="bearer">Bearer Token</option>
+                        <option value="basic">Basic Auth</option>
+                        <option value="apiKey">API Key</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="authFields" style="display: none;">
+                    <!-- Campos adicionales de autenticación aparecerán aquí -->
+                </div>
+                
+                <button id="saveConfig">Guardar Configuración</button>
+            </div>
+            
+            <div class="request-panel">
+                <h2>Solicitud</h2>
+                
+                <div class="form-group">
+                    <label for="requestMethod">Método HTTP</label>
+                    <select id="requestMethod">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                        <option value="PATCH">PATCH</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestParams">Parámetros (JSON)</label>
+                    <textarea id="requestParams" placeholder='{"param1": "value1", "param2": "value2"}'></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestHeaders">Headers (JSON)</label>
+                    <textarea id="requestHeaders" placeholder='{"Content-Type": "application/json"}'></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestBody">Cuerpo (JSON)</label>
+                    <textarea id="requestBody" placeholder='{"key": "value"}'></textarea>
+                </div>
+                
+                <button id="sendRequest">Enviar Solicitud</button>
+            </div>
+        </div>
+        
+        <div class="loading" id="loadingIndicator">
+            <div class="spinner"></div>
+            <p>Procesando solicitud...</p>
+        </div>
+        
+        <div class="response-container">
+            <h2>Respuesta</h2>
+            
+            <div class="response-tabs">
+                <div class="response-tab active" data-tab="response">Respuesta</div>
+                <div class="response-tab" data-tab="headers">Headers</div>
+                <div class="response-tab" data-tab="metadata">Metadatos</div>
+            </div>
+            
+            <div class="response-content active" id="responseData">
+                <p>Realiza una solicitud para ver los resultados.</p>
+            </div>
+            
+            <div class="response-content" id="responseHeaders">
+                <p>Los headers de respuesta aparecerán aquí.</p>
+            </div>
+            
+            <div class="response-content" id="responseMetadata">
+                <p>Los metadatos de la solicitud aparecerán aquí.</p>
+            </div>
+        </div>
+    </div>
 
-    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos del DOM
+            const apiEndpoint = document.getElementById('apiEndpoint');
+            const apiKey = document.getElementById('apiKey');
+            const toggleVisibility = document.getElementById('toggleVisibility');
+            const authType = document.getElementById('authType');
+            const authFields = document.getElementById('authFields');
+            const requestMethod = document.getElementById('requestMethod');
+            const requestParams = document.getElementById('requestParams');
+            const requestHeaders = document.getElementById('requestHeaders');
+            const requestBody = document.getElementById('requestBody');
+            const saveConfigBtn = document.getElementById('saveConfig');
+            const sendRequestBtn = document.getElementById('sendRequest');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const responseData = document.getElementById('responseData');
+            const responseHeaders = document.getElementById('responseHeaders');
+            const responseMetadata = document.getElementById('responseMetadata');
+            const tabs = document.querySelectorAll('.response-tab');
+            
+            // Cargar configuración guardada
+            loadConfig();
+            
+            // Mostrar/ocultar API Key
+            toggleVisibility.addEventListener('click', function() {
+                const type = apiKey.getAttribute('type') === 'password' ? 'text' : 'password';
+                apiKey.setAttribute('type', type);
+                this.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+            });
+            
+            // Cambiar campos de autenticación según tipo seleccionado
+            authType.addEventListener('change', updateAuthFields);
+            
+            // Guardar configuración
+            saveConfigBtn.addEventListener('click', saveConfig);
+            
+            // Enviar solicitud
+            sendRequestBtn.addEventListener('click', sendRequest);
+            
+            // Cambiar pestañas de respuesta
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.response-content').forEach(c => c.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    document.getElementById(`${this.dataset.tab}-tab`).classList.add('active');
+                });
+            });
+            
+            // Función para actualizar campos de autenticación
+            function updateAuthFields() {
+                const type = authType.value;
+                authFields.style.display = type === 'none' ? 'none' : 'block';
+                
+                let fieldsHTML = '';
+                
+                switch(type) {
+                    case 'bearer':
+                        fieldsHTML = `
+                            <label for="bearerToken">Token</label>
+                            <input type="password" id="bearerToken" placeholder="Ingresa tu bearer token">
+                        `;
+                        break;
+                    case 'basic':
+                        fieldsHTML = `
+                            <label for="basicUsername">Usuario</label>
+                            <input type="text" id="basicUsername" placeholder="Usuario">
+                            
+                            <label for="basicPassword">Contraseña</label>
+                            <input type="password" id="basicPassword" placeholder="Contraseña">
+                        `;
+                        break;
+                    case 'apiKey':
+                        fieldsHTML = `
+                            <label for="apiKeyName">Nombre del parámetro</label>
+                            <input type="text" id="apiKeyName" placeholder="Ej: api_key">
+                            
+                            <label for="apiKeyValue">Valor</label>
+                            <input type="password" id="apiKeyValue" placeholder="Valor de la API key">
+                            
+                            <label for="apiKeyLocation">Ubicación</label>
+                            <select id="apiKeyLocation">
+                                <option value="header">Header</option>
+                                <option value="query">Query Parameter</option>
+                            </select>
+                        `;
+                        break;
+                }
+                
+                authFields.innerHTML = fieldsHTML;
+            }
+            
+            // Función para cargar configuración guardada
+            function loadConfig() {
+                const savedConfig = localStorage.getItem('apiConsumerConfig');
+                if (savedConfig) {
+                    try {
+                        const config = JSON.parse(savedConfig);
+                        
+                        apiEndpoint.value = config.apiEndpoint || '';
+                        apiKey.value = config.apiKey || '';
+                        authType.value = config.authType || 'none';
+                        requestMethod.value = config.requestMethod || 'GET';
+                        requestParams.value = config.requestParams || '';
+                        requestHeaders.value = config.requestHeaders || '';
+                        requestBody.value = config.requestBody || '';
+                        
+                        updateAuthFields();
+                        
+                        // Cargar campos específicos de autenticación
+                        if (config.authFields) {
+                            for (const [key, value] of Object.entries(config.authFields)) {
+                                const field = document.getElementById(key);
+                                if (field) field.value = value;
+                            }
+                        }
+                        
+                        console.log('Configuración cargada');
+                    } catch (e) {
+                        console.error('Error al cargar configuración:', e);
+                    }
+                }
+            }
+            
+            // Función para guardar configuración
+            function saveConfig() {
+                const config = {
+                    apiEndpoint: apiEndpoint.value,
+                    apiKey: apiKey.value,
+                    authType: authType.value,
+                    requestMethod: requestMethod.value,
+                    requestParams: requestParams.value,
+                    requestHeaders: requestHeaders.value,
+                    requestBody: requestBody.value,
+                    authFields: {}
+                };
+                
+                // Guardar campos específicos de autenticación
+                const authFieldsInputs = authFields.querySelectorAll('input, select');
+                authFieldsInputs.forEach(input => {
+                    config.authFields[input.id] = input.value;
+                });
+                
+                localStorage.setItem('apiConsumerConfig', JSON.stringify(config));
+                
+                alert('Configuración guardada correctamente');
+            }
+            
+            // Función para enviar solicitud
+            async function sendRequest() {
+                const endpoint = apiEndpoint.value.trim();
+                if (!endpoint) {
+                    alert('Por favor ingresa un endpoint válido');
+                    return;
+                }
+                
+                try {
+                    loadingIndicator.style.display = 'block';
+                    clearResponse();
+                    
+                    // Preparar parámetros
+                    let url = endpoint;
+                    const method = requestMethod.value;
+                    let headers = {
+                        'Accept': 'application/json'
+                    };
+                    let body = null;
+                    
+                    // Agregar headers desde el textarea
+                    try {
+                        const additionalHeaders = requestHeaders.value.trim() ? JSON.parse(requestHeaders.value) : {};
+                        headers = {...headers, ...additionalHeaders};
+                    } catch (e) {
+                        throw new Error('Formato de headers inválido. Debe ser un JSON válido.');
+                    }
+                    
+                    // Agregar parámetros de consulta
+                    try {
+                        const params = requestParams.value.trim() ? JSON.parse(requestParams.value) : {};
+                        const queryString = new URLSearchParams(params).toString();
+                        if (queryString) {
+                            url += (url.includes('?') ? '&' : '?') + queryString;
+                        }
+                    } catch (e) {
+                        throw new Error('Formato de parámetros inválido. Debe ser un JSON válido.');
+                    }
+                    
+                    // Configurar autenticación
+                    configureAuth(headers);
+                    
+                    // Configurar cuerpo para métodos POST, PUT, PATCH
+                    if (['POST', 'PUT', 'PATCH'].includes(method)) {
+                        try {
+                            body = requestBody.value.trim() ? JSON.stringify(JSON.parse(requestBody.value)) : '';
+                            if (body && !headers['Content-Type']) {
+                                headers['Content-Type'] = 'application/json';
+                            }
+                        } catch (e) {
+                            throw new Error('Formato del cuerpo inválido. Debe ser un JSON válido.');
+                        }
+                    }
+                    
+                    // Realizar la solicitud
+                    const startTime = performance.now();
+                    const response = await fetch(url, {
+                        method,
+                        headers,
+                        body
+                    });
+                    const endTime = performance.now();
+                    
+                    // Procesar respuesta
+                    const responseTime = Math.round(endTime - startTime);
+                    let data;
+                    
+                    try {
+                        data = await response.json();
+                    } catch (e) {
+                        data = await response.text();
+                    }
+                    
+                    // Mostrar respuesta
+                    displayResponse(response, data, responseTime);
+                    
+                } catch (error) {
+                    console.error('Error en la solicitud:', error);
+                    responseData.innerHTML = `
+                        <div style="color: var(--error-color); padding: 15px; background-color: #fde8e8; border-radius: 4px;">
+                            <strong>Error:</strong> ${error.message}
+                        </div>
+                    `;
+                } finally {
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+            
+            // Función para configurar autenticación
+            function configureAuth(headers) {
+                const type = authType.value;
+                
+                switch(type) {
+                    case 'bearer':
+                        const token = document.getElementById('bearerToken')?.value;
+                        if (token) {
+                            headers['Authorization'] = `Bearer ${token}`;
+                        }
+                        break;
+                    case 'basic':
+                        const username = document.getElementById('basicUsername')?.value;
+                        const password = document.getElementById('basicPassword')?.value;
+                        if (username && password) {
+                            headers['Authorization'] = `Basic ${btoa(`${username}:${password}`)}`;
+                        }
+                        break;
+                    case 'apiKey':
+                        const keyName = document.getElementById('apiKeyName')?.value;
+                        const keyValue = document.getElementById('apiKeyValue')?.value;
+                        const location = document.getElementById('apiKeyLocation')?.value;
+                        
+                        if (keyName && keyValue) {
+                            if (location === 'header') {
+                                headers[keyName] = keyValue;
+                            }
+                            // Para query params, ya se maneja en la construcción de la URL
+                        }
+                        break;
+                }
+            }
+            
+            // Función para mostrar la respuesta
+            function displayResponse(response, data, responseTime) {
+                // Mostrar datos de respuesta
+                responseData.innerHTML = `
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                // Mostrar headers de respuesta
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                responseHeaders.innerHTML = `
+                    <pre>${JSON.stringify(headers, null, 2)}</pre>
+                `;
+                
+                // Mostrar metadatos
+                responseMetadata.innerHTML = `
+                    <p><strong>Estado:</strong> <span class="status-indicator status-${response.status}">${response.status} ${response.statusText}</span></p>
+                    <p><strong>Tiempo de respuesta:</strong> ${responseTime} ms</p>
+                    <p><strong>Tamaño:</strong> ${JSON.stringify(data).length} bytes</p>
+                    <p><strong>URL:</strong> ${response.url}</p>
+                `;
+            }
+            
+            // Función para limpiar las respuestas anteriores
+            function clearResponse() {
+                responseData.innerHTML = '<p>Procesando respuesta...</p>';
+                responseHeaders.innerHTML = '<p>Procesando headers...</p>';
+                responseMetadata.innerHTML = '<p>Procesando metadatos...</p>';
+            }
+            
+            // Inicializar campos de autenticación
+            updateAuthFields();
+        });
+    </script>
 </body>
 </html>
