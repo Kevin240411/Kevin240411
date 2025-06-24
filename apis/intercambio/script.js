@@ -1,35 +1,59 @@
-const API_KEY = '7ef7409c2763b162ca0a39d9'; // ¡OBTEN TU PROPIA CLAVE API!
-const API_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/USD`; // URL correcta
+// Función asíncrona para obtener los precios de las criptomonedas
+async function obtenerPreciosCripto() {
+    // URL de la CoinGecko API para obtener precios de múltiples monedas
+    // ids: bitcoin, ethereum, tether (los IDs de las monedas en CoinGecko)
+    // vs_currencies: usd (la moneda en la que queremos ver el precio)
+    const API_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether&vs_currencies=usd';
 
-async function obtenerTasasDeCambio() {
     try {
+        // Realiza la petición a la API
         const response = await fetch(API_URL);
 
+        // Verifica si la respuesta es exitosa
         if (!response.ok) {
             throw new Error(`Error HTTP: ${response.status}`);
         }
 
+        // Parsea la respuesta JSON
         const data = await response.json();
 
-        // Verifica que existan las tasas
-        const tasaEUR = data.conversion_rates.EUR;
-        const tasaGBP = data.conversion_rates.GBP;
-        const tasaJPY = data.conversion_rates.JPY;
+        // Obtiene los elementos HTML donde mostraremos los precios
+        const bitcoinElement = document.getElementById('bitcoinPrice');
+        const ethereumElement = document.getElementById('ethereumPrice');
+        const tetherElement = document.getElementById('tetherPrice');
 
-        document.getElementById('tasaEUR').textContent = `1 USD = ${tasaEUR.toFixed(4)} EUR`;
-        document.getElementById('tasaGBP').textContent = `1 USD = ${tasaGBP.toFixed(4)} GBP`;
-        document.getElementById('tasaJPY').textContent = `1 USD = ${tasaJPY.toFixed(4)} JPY`;
+        // Actualiza el contenido de los elementos HTML con los precios obtenidos
+        // Asegúrate de que los IDs de las monedas y la estructura del JSON coincidan
+        if (data.bitcoin && data.bitcoin.usd) {
+            bitcoinElement.innerHTML = `<strong>Bitcoin (BTC):</strong> $${data.bitcoin.usd.toFixed(2)} USD`;
+        } else {
+            bitcoinElement.textContent = "Bitcoin: Precio no disponible";
+        }
+
+        if (data.ethereum && data.ethereum.usd) {
+            ethereumElement.innerHTML = `<strong>Ethereum (ETH):</strong> $${data.ethereum.usd.toFixed(2)} USD`;
+        } else {
+            ethereumElement.textContent = "Ethereum: Precio no disponible";
+        }
+
+        if (data.tether && data.tether.usd) {
+            tetherElement.innerHTML = `<strong>Tether (USDT):</strong> $${data.tether.usd.toFixed(4)} USD`; 
+        } else {
+            tetherElement.textContent = "Tether: Precio no disponible";
+        }
 
     } catch (error) {
-        console.error("Hubo un error al obtener las tasas de cambio:", error);
-        document.getElementById('tasaEUR').textContent = "Error al cargar.";
-        document.getElementById('tasaGBP').textContent = "Error al cargar.";
-        document.getElementById('tasaJPY').textContent = "Error al cargar.";
+        console.error("Hubo un error al obtener los precios de las criptomonedas:", error);
+        // Muestra un mensaje de error en la interfaz de usuario si algo falla
+        document.getElementById('bitcoinPrice').textContent = "Error al cargar el precio de Bitcoin.";
+        document.getElementById('ethereumPrice').textContent = "Error al cargar el precio de Ethereum.";
+        document.getElementById('tetherPrice').textContent = "Error al cargar el precio de Tether.";
     }
 }
 
-// Llama a la función cuando la página se cargue
-document.addEventListener('DOMContentLoaded', () => {
-    obtenerTasasDeCambio();
-    setInterval(obtenerTasasDeCambio, 120000); // 120000 ms = 2 minutos
-});
+// Ejecuta la función para obtener precios cuando el DOM esté completamente cargado
+document.addEventListener('DOMContentLoaded', obtenerPreciosCripto);
+
+// Opcional: Actualizar los precios cada cierto intervalo (por ejemplo, cada 60 segundos)
+// CoinGecko tiene límites de tasa para su API gratuita, así que no hagas solicitudes demasiado frecuentes.
+// setInterval(obtenerPreciosCripto, 60000); // 60000 milisegundos = 1 minuto
