@@ -1,0 +1,23 @@
+h1{
+    color : #0071ff;
+    font-size: 18px;
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border: 1px solid black;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 10px;
+}
+form {
+    color: black;
+    font-size: 18px;
+    text-align: center;
+    width: 50%;
+    margin: flex;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}

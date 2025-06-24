@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ubicación de Universidades </title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #1a73e8;
+            text-align: center;
+        }
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        .info {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .controls {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Universidades en Nezahualcóyotl y Chimalhuacán</h1>
+    
+    <div class="controls">
+        <label for="university-select">Selecciona una universidad:</label>
+        <select id="university-select" onchange="centerOnUniversity(this.value)">
+            <option value="">-- Selecciona una opción --</option>
+            <option value="utneza">Universidad Tecnológica de Nezahualcóyotl</option>
+            <option value="upchi">Universidad Politécnica de Chimalhuacán</option>
+            <option value="teschi">Tecnológico de Estudios Superiores de Chimalhuacán</option>
+        </select>
+    </div>
+    
+    <div class="info">
+        <p>Este mapa muestra las ubicaciones de:</p>
+        <ul>
+            <li>Universidad Tecnológica de Nezahualcóyotl</li>
+            <li>Universidad Politécnica de Chimalhuacán</li>
+            <li>Tecnológico de Estudios Superiores de Chimalhuacán</li>
+        </ul>
+    </div>
+    
+    <div id="map"></div>
+    
+    <script>
+        
+        let map;
+        let utnezaMarker;
+        let upchiMarker;
+        let teschiMarker;
+        let infowindowUtneza;
+        let infowindowUpchi;
+        let infowindowTeschi;
+
+        function initMap() {
+            
+            const utneza = { lat: 19.4035, lng: -99.0155 };
+            const upchi = { lat: 19.4214, lng: -98.9532 };
+            const teschi = { lat: 19.4066, lng: -98.9636 };
+
+            
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 12,
+                center: { lat: 19.4124, lng: -98.9843 },
+                mapTypeId: "terrain",
+            });
+
+            utnezaMarker = new google.maps.Marker({
+                position: utneza,
+                map: map,
+                title: "Universidad Tecnológica de Nezahualcóyotl",
+                label: "UT Neza",
+                icon: {
+                    url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                }
+            });
+
+            upchiMarker = new google.maps.Marker({
+                position: upchi,
+                map: map,
+                title: "Universidad Politécnica de Chimalhuacán",
+                label: "UP Chi",
+                icon: {
+                    url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                }
+            });
+
+            teschiMarker = new google.maps.Marker({
+                position: teschi,
+                map: map,
+                title: "Tecnológico de Estudios Superiores de Chimalhuacán",
+                label: "TesChi",
+                icon: {
+                    url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                }
+            });
+            
+            infowindowUtneza = new google.maps.InfoWindow({
+                content: `<div style="padding: 10px;">
+                            <h3 style="margin: 0 0 5px 0; color: #1a73e8;">Universidad Tecnológica de Nezahualcóyotl</h3>
+                            <p style="margin: 0;">Av. Bordo de Xochiaca s/n, Benito Juárez, 57000 Nezahualcóyotl, Méx.</p>
+                        </div>`
+            });
+            
+            infowindowUpchi = new google.maps.InfoWindow({
+                content: `<div style="padding: 10px;">
+                            <h3 style="margin: 0 0 5px 0; color: #1a73e8;">Universidad Politécnica de Chimalhuacán</h3>
+                            <p style="margin: 0;">Camino Viejo a Chicoloapan s/n, Chimalhuacán, Estado de México</p>
+                        </div>`
+            });
+            
+            infowindowTeschi = new google.maps.InfoWindow({
+                content: `<div style="padding: 10px;">
+                            <h3 style="margin: 0 0 5px 0; color: #1a73e8;">Tecnológico de Estudios Superiores de Chimalhuacán</h3>
+                            <p style="margin: 0;">Av. Teotihuacán s/n, Villa de Chimalhuacán, Estado de México</p>
+                        </div>`
+            });
+            
+            utnezaMarker.addListener('click', function() {
+                closeAllInfoWindows();
+                infowindowUtneza.open(map, utnezaMarker);
+                document.getElementById('university-select').value = 'utneza';
+            });
+            
+            upchiMarker.addListener('click', function() {
+                closeAllInfoWindows();
+                infowindowUpchi.open(map, upchiMarker);
+                document.getElementById('university-select').value = 'upchi';
+            });
+            
+            teschiMarker.addListener('click', function() {
+                closeAllInfoWindows();
+                infowindowTeschi.open(map, teschiMarker);
+                document.getElementById('university-select').value = 'teschi';
+            });
+            
+            map.addListener('click', function() {
+                closeAllInfoWindows();
+            });
+        }
+        
+        function centerOnUniversity(university) {
+            closeAllInfoWindows();
+            
+            switch(university) {
+                case 'utneza':
+                    map.setCenter(utnezaMarker.getPosition());
+                    map.setZoom(16);
+                    infowindowUtneza.open(map, utnezaMarker);
+                    break;
+                case 'upchi':
+                    map.setCenter(upchiMarker.getPosition());
+                    map.setZoom(16);
+                    infowindowUpchi.open(map, upchiMarker);
+                    break;
+                case 'teschi':
+                    map.setCenter(teschiMarker.getPosition());
+                    map.setZoom(16);
+                    infowindowTeschi.open(map, teschiMarker);
+                    break;
+                default:
+                    map.setCenter({ lat: 19.4124, lng: -98.9843 });
+                    map.setZoom(12);
+            }
+        }
+
+        function closeAllInfoWindows() {
+            infowindowUtneza.close();
+            infowindowUpchi.close();
+            infowindowTeschi.close();
+        }
+    </script>
+    
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCdpfD74JIrCWQHOzMWlJSgxl-20HZC_Y4&callback=initMap">
+    </script>
+</body>
+</html>

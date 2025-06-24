@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lugares turísticos de México - Google Maps API</title>
+    <link rel="stylesheet" href="estilo.css">
+
+</head>
+<body>
+    <div class="container">
+        <h1>Lugares turísticos de México</h1>
+        <div>
+            <button class="btn-lugar" onclick="mostrarLugar(0)">Chichén Itzá</button>
+            <button class="btn-lugar" onclick="mostrarLugar(1)">Teotihuacán</button>
+            <button class="btn-lugar" onclick="mostrarLugar(2)">Cabo San Lucas</button>
+            <button class="btn-lugar" onclick="mostrarLugar(3)">Cancún</button>
+            <button class="btn-lugar" onclick="mostrarLugar(4)">Barranca del Cobre</button>
+        </div>
+        <div id="map"></div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const lugares = [
+            {
+                nombre: "Chichén Itzá",
+                descripcion: "Zona arqueológica maya en Yucatán, famosa por la pirámide de Kukulkán.",
+                lat: 20.6843,
+                lng: -88.5678
+            },
+            {
+                nombre: "Teotihuacán",
+                descripcion: "Antigua ciudad mesoamericana cerca de Ciudad de México, conocida por sus pirámides.",
+                lat: 19.6925,
+                lng: -98.8434
+            },
+            {
+                nombre: "Cabo San Lucas",
+                descripcion: "Destino turístico en Baja California Sur, famoso por sus playas y el Arco.",
+                lat: 22.8905,
+                lng: -109.9167
+            },
+            {
+                nombre: "Cancún",
+                descripcion: "Ciudad turística en Quintana Roo, conocida por sus playas y vida nocturna.",
+                lat: 21.1619,
+                lng: -86.8515
+            },
+            {
+                nombre: "Barranca del Cobre",
+                descripcion: "Sistema de cañones en Chihuahua, más grande y profundo que el Gran Cañón.",
+                lat: 27.5266,
+                lng: -107.7428
+            }
+        ];
+
+        let map;
+        let marker;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 23.6345, lng: -102.5528 }, // Centro de México
+                zoom: 5,
+            });
+        }
+
+        function mostrarLugar(idx) {
+            const lugar = lugares[idx];
+            const position = { lat: lugar.lat, lng: lugar.lng };
+            map.setCenter(position);
+            map.setZoom(14);
+            if (marker) marker.setMap(null);
+            marker = new google.maps.Marker({
+                map: map,
+                position: position,
+                title: lugar.nombre
+            });
+            document.getElementById('result').innerHTML = `
+                <b>${lugar.nombre}</b><br>
+                ${lugar.descripcion}
+            `;
+        }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCdpfD74JIrCWQHOzMWlJSgxl-20HZC_Y4&callback=initMap" async defer></script>
+</body>
+</html>

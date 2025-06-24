@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integración con API de Redes Sociales</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .social-container {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Integración con Redes Sociales</h1>
+
+    <div class="social-container">
+        <h2>Compartir en Redes Sociales</h2>
+        <button onclick="shareOnFacebook()">Ir a Facebook</button>
+        <button onclick="shareOnTwitter()">Ir a Twitter</button>
+        <button onclick="shareOnInstagram()">Ir a Instagram</button>
+    </div>
+
+    <div class="social-container">
+        <h2>Últimos Tweets de @guarromantico</h2>
+        <a class="twitter-timeline" 
+           data-tweet-limit="5" 
+           href="https://x.com/Guarromantico_?ref_src=twsrc%5Etfw">
+           Tweets por @guarromantico
+        </a>
+    </div>
+
+    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+    <script>
+        function shareOnFacebook() {
+            const url = encodeURIComponent(window.location.href);
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+        }
+
+        function shareOnTwitter() {
+            const text = encodeURIComponent("Mira esta página interesante!");
+            const url = encodeURIComponent(window.location.href);
+            window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+        }
+
+        function shareOnInstagram() {
+            window.open('https://www.instagram.com/', '_blank');
+        }
+    </script>
+</body>
+</html>

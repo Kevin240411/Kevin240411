@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Buscador de YouTube</title>
+    
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Buscador de YouTube</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Buscar videos...">
+            <button id="searchButton">Buscar</button>
+        </div>
+        
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>Cargando videos...</p>
+        </div>
+        
+        <div class="results-container" id="resultsContainer"></div>
+        
+        <div class="pagination">
+            <button id="prevPage" disabled>Anterior</button>
+            <button id="nextPage" disabled>Siguiente</button>
+        </div>
+    </div>
+    
+    <div class="player-container" id="playerContainer">
+        <div class="player-wrapper">
+            <button class="close-player" id="closePlayer">&times;</button>
+            <iframe id="videoPlayer" frameborder="0" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+            </iframe>
+        </div>
+    </div>
+
+    <script>
+        // API Key de YouTube - Reemplaza con tu propia API Key
+        const YOUTUBE_API_KEY = 'TU_API_KEY_AQUI';
+        let nextPageToken = '';
+        let prevPageToken = '';
+        let currentSearchQuery = '';
+        
+        // Elementos del DOM
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const loadingDiv = document.querySelector('.loading');
+        const playerContainer = document.getElementById('playerContainer');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const closePlayer = document.getElementById('closePlayer');
+        const prevPageButton = document.getElementById('prevPage');
+        const nextPageButton = document.getElementById('nextPage');
+        
+        // Event Listeners
+        searchButton.addEventListener('click', searchVideos);
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchVideos();
+            }
+        });
+        closePlayer.addEventListener('click', closeVideoPlayer);
+        prevPageButton.addEventListener('click', goToPrevPage);
+        nextPageButton.addEventListener('click', goToNextPage);
+        
+        // Función para buscar videos
+        async function searchVideos(pageToken = '') {
+            const query = searchInput.value.trim();
+            
+            if (!query) {
+                alert('Por favor ingresa un término de búsqueda');
+                return;
+            }
+            
+            try {
+                // Mostrar loading
+                loadingDiv.style.display = 'block';
+                resultsContainer.innerHTML = '';
+                currentSearchQuery = query;
+                
+                // Construir URL de la API
+                let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=12&q=${encodeURIComponent(query)}&key=${YOUTUBE_API_KEY}`;
+                
+                if (pageToken) {
+                    url += `&pageToken=${pageToken}`;
+                }
+                
+                // Hacer la petición a la API
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Guardar tokens de paginación
+                nextPageToken = data.nextPageToken || '';
+                prevPageToken = data.prevPageToken || '';
+                
+                // Actualizar botones de paginación
+                prevPageButton.disabled = !prevPageToken;
+                nextPageButton.disabled = !nextPageToken;
+                
+                // Mostrar resultados
+                displayResults(data.items);
+                
+            } catch (error) {
+                console.error('Error al buscar videos:', error);
+                resultsContainer.innerHTML = `<p style="color: red; text-align: center;">Error al cargar los videos: ${error.message}</p>`;
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+        
+        // Función para mostrar los resultados
+        function displayResults(videos) {
+            resultsContainer.innerHTML = '';
+            
+            if (videos.length === 0) {
+                resultsContainer.innerHTML = '<p style="text-align: center;">No se encontraron videos</p>';
+                return;
+            }
+            
+            videos.forEach(video => {
+                const videoCard = document.createElement('div');
+                videoCard.className = 'video-card';
+                videoCard.innerHTML = `
+                    <div class="video-thumbnail">
+                        <img src="${video.snippet.thumbnails.medium.url}" alt="${video.snippet.title}">
+                    </div>
+                    <div class="video-info">
+                        <div class="video-title" title="${video.snippet.title}">${video.snippet.title}</div>
+                        <div class="video-channel">${video.snippet.channelTitle}</div>
+                        <div class="video-meta">
+                            <span>${new Date(video.snippet.publishedAt).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                `;
+                
+                videoCard.addEventListener('click', () => playVideo(video.id.videoId));
+                resultsContainer.appendChild(videoCard);
+            });
+        }
+        
+        // Función para reproducir un video
+        function playVideo(videoId) {
+            videoPlayer.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+            playerContainer.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Función para cerrar el reproductor
+        function closeVideoPlayer() {
+            playerContainer.classList.remove('active');
+            videoPlayer.src = '';
+            document.body.style.overflow = 'auto';
+        }
+        
+        // Función para ir a la página anterior
+        function goToPrevPage() {
+            if (prevPageToken) {
+                searchVideos(prevPageToken);
+            }
+        }
+        
+        // Función para ir a la página siguiente
+        function goToNextPage() {
+            if (nextPageToken) {
+                searchVideos(nextPageToken);
+            }
+        }
+        
+        // Cerrar reproductor al hacer clic fuera del video
+        playerContainer.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeVideoPlayer();
+            }
+        });
+    </script>
+</body>
+</html>
